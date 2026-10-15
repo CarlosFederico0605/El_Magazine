@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'Editar' if editar else 'Nuevo' }} artículo{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card p-4">
+            <h3 class="mb-3">{{ 'Editar artículo' if editar else 'Nuevo artículo' }}</h3>
+            <form method="POST" enctype="multipart/form-data">
+                {{ form.hidden_tag() }}
+                <div class="mb-3">
+                    {{ form.titulo.label(class="form-label") }}
+                    {{ form.titulo(class="form-control") }}
+                </div>
+                <div class="mb-3">
+                    {{ form.contenido.label(class="form-label") }}
+                    {{ form.contenido(class="form-control", rows=10) }}
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Imagen (opcional)</label>
+                    <input type="file" name="imagen" class="form-control" accept="image/*">
+                </div>
+                {{ form.submit(class="btn btn-primary") }}
+                <a href="{{ url_for('articulos.mis_articulos') }}" class="btn btn-secondary">Cancelar</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Conteo de votos por urna</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0; padding: 10px;
+    font-family: -apple-system, system-ui, sans-serif;
+    background: #0f0f0f; color: #eee;
+    display: flex; flex-direction: column; gap: 10px;
+    max-width: 900px; margin: 0 auto;
+  }
+  h1 { font-size: 16px; margin: 0; text-align: center; color: #888; }
+
+  .urna {
+    background: #1c1c1c; border-radius: 10px; padding: 10px;
+    border: 2px solid #2a2a2a;
+  }
+  .urna h2 {
+    font-size: 14px; margin: 0 0 8px; color: #4af;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .urna h2 .total { font-size: 12px; color: #888; font-weight: normal; }
+
+  .campos {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 6px;
+  }
+  .campo {
+    display: flex; flex-direction: column; gap: 3px;
+  }
+  .campo label { font-size: 11px; color: #888; }
+  .campo input {
+    font-size: 18px; padding: 8px; width: 100%;
+    border: 1px solid #333; border-radius: 6px;
+    background: #0a0a0a; color: #fff; text-align: right;
+    outline: none;
+  }
+  .campo input:focus { border-color: #4af; }
+  .campo.blanco input { background: #1e1e1e; }
+  .campo.anulado input { background: #2a1515; }
+
+  button {
+    padding: 10px; font-size: 14px; font-weight: bold;
+    border: none; border-radius: 8px; background: #333; color: #eee;
+    cursor: pointer;
+  }
+  button:active { background: #555; }
+  .acciones { display: flex; gap: 8px; flex-wrap: wrap; }
+  .acciones button { flex: 1; min-width: 120px; }
+  #agregarUrna { background: #245; }
+  #reiniciar { background: #533; }
+  #exportar { background: #253; }
+
+  .totales {
+    background: #1c1c1c; border-radius: 10px; padding: 12px;
+    font-size: 14px;
+    position: sticky; top: 0; z-index: 10;
+    border: 2px solid #245;
+  }
+  .totales h2 { font-size: 13px; margin: 0 0 8px; color: #4af; text-transform: uppercase; }
+  .totales .fila {
+    display: flex; justify-content: space-between;
+    padding: 5px 0; border-bottom: 1px solid #2a2a2a;
+  }
+  .totales .fila:last-child { border-bottom: none; }
+  .totales .pct { color: #4af; font-size: 13px; }
+  .totales .destacado { font-weight: bold; color: #4d4; font-size: 15px; }
+  .totales .sub { color: #888; font-size: 12px; }
+
+  .quitar {
+    background: #522; color: #faa; padding: 4px 8px;
+    font-size: 11px; border-radius: 6px;
+    align-self: flex-start;
+  }
+  .aviso {
+    background: #442; color: #fc8; padding: 6px 10px;
+    border-radius: 6px; font-size: 12px; text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<h1>Conteo de votos por urna</h1>
+
+<div class="totales" id="totales"></div>
+
+<div class="acciones">
+  <button id="agregarUrna">+ Agregar urna</button>
+  <button id="exportar">Exportar resultados</button>
+  <button id="reiniciar">Reiniciar todo</button>
+</div>
+
+<div id="urnas"></div>
+
+<script>
+  // ---- CONFIG ----
+  const LISTAS = ['Lista 1','Lista 34','Lista 543','Lista 1951','Lista 31824'];
+  const CLAVES = [...LISTAS.map((_,i)=>'L'+(i+1)), 'B', 'N'];
+  const NOMBRES = Object.fromEntries([
+    ...LISTAS.map((n,i)=>['L'+(i+1), n]),
+    ['B','En blanco'], ['N','Anulados']
+  ]);
+
+  // estado: urnas = [ {L1:'',L2:'',...,B:'',N:''}, ... ]
+  let urnas = [ nuevaUrna() ];
+
+  function nuevaUrna() {
+    const u = {};
+    CLAVES.forEach(k => u[k] = '');
+    return u;
+  }
+
+  // ---- RENDER ----
+  const urnasEl = document.getElementById('urnas');
+  const totalesEl = document.getElementById('totales');
+
+  function renderUrnas() {
+    urnasEl.innerHTML = '';
+    urnas.forEach((u, i) => {
+      const div = document.createElement('div');
+      div.className = 'urna';
+
+      const totalU = CLAVES.reduce((a,k)=>a + (parseFloat(u[k])||0), 0);
+
+      let camposHtml = '';
+      CLAVES.forEach(k => {
+        const clase = k==='B'?'blanco':k==='N'?'anulado':'';
+        camposHtml += `
+          <div class="campo ${clase}">
+            <label>${NOMBRES[k]}</label>
+            <input type="text" inputmode="numeric" data-urna="${i}" data-clave="${k}" value="${u[k]}" placeholder="0">
+          </div>`;
+      });
+
+      div.innerHTML = `
+        <h2>
+          <span>Urna ${i+1}</span>
+          <span class="total">Total urna: ${totalU}</span>
+          ${urnas.length > 1 ? `<button class="quitar" data-quitar="${i}">Eliminar</button>` : ''}
+        </h2>
+        <div class="campos">${camposHtml}</div>
+      `;
+      urnasEl.appendChild(div);
+    });
+
+    // listeners
+    urnasEl.querySelectorAll('input').forEach(inp => {
+      inp.addEventListener('input', e => {
+        const i = +e.target.dataset.urna;
+        const k = e.target.dataset.clave;
+        urnas[i][k] = e.target.value.replace(/[^\d]/g,'');
+        e.target.value = urnas[i][k];
+        renderTotales();
+        // actualizar "total urna" del encabezado sin re-render completo
+        const totalU = CLAVES.reduce((a,kk)=>a + (parseFloat(urnas[i][kk])||0), 0);
+        e.target.closest('.urna').querySelector('.total').textContent = 'Total urna: ' + totalU;
+      });
+    });
+
+    urnasEl.querySelectorAll('[data-quitar]').forEach(btn => {
+      btn.onclick = () => {
+        const i = +btn.dataset.quitar;
+        if (confirm(`¿Eliminar urna ${i+1}?`)) {
+          urnas.splice(i,1);
+          renderUrnas();
+          renderTotales();
+        }
+      };
+    });
+  }
+
+  function renderTotales() {
+    const tot = {};
+    CLAVES.forEach(k => tot[k] = urnas.reduce((a,u)=>a + (parseFloat(u[k])||0), 0));
+
+    const totalVotos = CLAVES.reduce((a,k)=>a+tot[k],0);
+    const validos = totalVotos - tot.B - tot.N;
+
+    let html = '<h2>Totales hasta el momento</h2>';
+    LISTAS.forEach((n,i) => {
+      const k = 'L'+(i+1);
+      const pct = validos ? (tot[k]/validos*100) : 0;
+      html += `<div class="fila"><span>${n}</span><span><b>${tot[k]}</b> <span class="pct">(${pct.toFixed(1)}%)</span></span></div>`;
+    });
+    html += `<div class="fila"><span>En blanco</span><span><b>${tot.B}</b></span></div>`;
+    html += `<div class="fila"><span>Anulados</span><span><b>${tot.N}</b></span></div>`;
+    html += `<div class="fila destacado"><span>TOTAL ESCRUTADO</span><span>${totalVotos}</span></div>`;
+    html += `<div class="fila sub"><span>Válidos (sin blanco ni anulados)</span><span>${validos}</span></div>`;
+    html += `<div class="fila sub"><span>Urnas cargadas</span><span>${urnas.length}</span></div>`;
+
+    totalesEl.innerHTML = html;
+  }
+
+  // ---- ACCIONES ----
+  document.getElementById('agregarUrna').onclick = () => {
+    urnas.push(nuevaUrna());
+    renderUrnas();
+    renderTotales();
+    // scroll a la nueva urna
+    setTimeout(()=>{
+      const ult = urnasEl.lastElementChild;
+      ult.scrollIntoView({behavior:'smooth', block:'center'});
+      ult.querySelector('input')?.focus();
+    }, 50);
+  };
+
+  document.getElementById('reiniciar').onclick = () => {
+    if (!confirm('¿Borrar TODO y empezar de cero?')) return;
+    urnas = [nuevaUrna()];
+    renderUrnas();
+    renderTotales();
+  };
+
+  document.getElementById('exportar').onclick = () => {
+    const tot = {};
+    CLAVES.forEach(k => tot[k] = urnas.reduce((a,u)=>a + (parseFloat(u[k])||0), 0));
+    const totalVotos = CLAVES.reduce((a,k)=>a+tot[k],0);
+    const validos = totalVotos - tot.B - tot.N;
+
+    let txt = 'RESULTADOS\n\n';
+    LISTAS.forEach((n,i)=>{
+      const k = 'L'+(i+1);
+      const pct = validos ? (tot[k]/validos*100).toFixed(1) : '0.0';
+      txt += `${n}: ${tot[k]} (${pct}%)\n`;
+    });
+    txt += `En blanco: ${tot.B}\n`;
+    txt += `Anulados: ${tot.N}\n`;
+    txt += `TOTAL ESCRUTADO: ${totalVotos}\n`;
+    txt += `Válidos: ${validos}\n\n`;
+
+    txt += 'DETALLE POR URNA\n';
+    urnas.forEach((u,i)=>{
+      const t = CLAVES.reduce((a,k)=>a+(parseFloat(u[k])||0),0);
+      txt += `Urna ${i+1} (total ${t}): `;
+      txt += CLAVES.map(k => `${NOMBRES[k]}=${parseFloat(u[k])||0}`).join(', ');
+      txt += '\n';
+    });
+
+    navigator.clipboard.writeText(txt).then(
+      ()=>alert('Resultados copiados al portapapeles'),
+      ()=>alert('No se pudo copiar. Acá están:\n\n' + txt)
+    );
+  };
+
+  // ---- INIT ----
+  renderUrnas();
+  renderTotales();
+</script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}Nueva encuesta{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="card p-4">
+            <h3 class="mb-2">Nueva encuesta</h3>
+            <p class="text-muted">Para el artículo: <strong>{{ art.titulo }}</strong></p>
+            <form method="POST">
+                {{ form.hidden_tag() }}
+                <div class="mb-3">
+                    {{ form.pregunta.label(class="form-label") }}
+                    {{ form.pregunta(class="form-control") }}
+                </div>
+                <div class="mb-3">
+                    {{ form.opcion1.label(class="form-label") }}
+                    {{ form.opcion1(class="form-control") }}
+                </div>
+                <div class="mb-3">
+                    {{ form.opcion2.label(class="form-label") }}
+                    {{ form.opcion2(class="form-control") }}
+                </div>
+                <div class="mb-3">
+                    {{ form.opcion3.label(class="form-label") }}
+                    {{ form.opcion3(class="form-control") }}
+                </div>
+                <div class="mb-3">
+                    {{ form.opcion4.label(class="form-label") }}
+                    {{ form.opcion4(class="form-control") }}
+                </div>
+                {{ form.submit(class="btn btn-success") }}
+                <a href="{{ url_for('articulos.ver_articulo', articulo_id=art.id) }}" class="btn btn-secondary">Cancelar</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

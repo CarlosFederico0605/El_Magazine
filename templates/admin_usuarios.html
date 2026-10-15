@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block title %}Usuarios{% endblock %}
+{% block content %}
+<h1 class="mb-4">Gestión de usuarios</h1>
+
+<div class="row g-4">
+    <div class="col-md-4">
+        <div class="card p-4">
+            <h5>Crear nuevo usuario</h5>
+            <form method="POST">
+                {{ form.hidden_tag() }}
+                <div class="mb-3">
+                    {{ form.username.label(class="form-label") }}
+                    {{ form.username(class="form-control") }}
+                </div>
+                <div class="mb-3">
+                    {{ form.password.label(class="form-label") }}
+                    {{ form.password(class="form-control") }}
+                </div>
+                {{ form.submit(class="btn btn-primary w-100") }}
+            </form>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="card p-4">
+            <h5>Usuarios existentes</h5>
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Usuario</th>
+                        <th>Rol</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in usuarios %}
+                    <tr>
+                        <td>{{ u.username }}</td>
+                        <td>{{ u.rol }}</td>
+                        <td>
+                            {% if u.activo %}<span class="badge bg-success">Activo</span>
+                            {% else %}<span class="badge bg-secondary">Desactivado</span>{% endif %}
+                        </td>
+                        <td>
+                            {% if u.rol != 'admin' %}
+                            <form method="POST" action="{{ url_for('admin.toggle', user_id=u.id) }}" class="d-inline">
+                                <button class="btn btn-sm btn-outline-{{ 'secondary' if u.activo else 'success' }}">
+                                    {{ 'Desactivar' if u.activo else 'Activar' }}
+                                </button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

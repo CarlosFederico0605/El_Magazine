@@ -1,0 +1,11 @@
+venv/
+__pycache__/
+*.pyc
+datos.db
+cookies.txt
+static/uploads/*
+static/fondo/*
+static/qr/*
+!static/uploads/.gitkeep
+!static/fondo/.gitkeep
+!static/qr/.gitkeep

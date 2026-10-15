@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block title %}Moderar artículos{% endblock %}
+{% block content %}
+<h1 class="mb-4">Moderar artículos</h1>
+
+{% if articulos %}
+<div class="table-responsive">
+    <table class="table table-hover bg-white align-middle">
+        <thead>
+            <tr>
+                <th>Título</th>
+                <th>Autor</th>
+                <th>Estado</th>
+                <th>Vistas</th>
+                <th>Fecha</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for a in articulos %}
+            <tr>
+                <td>{{ a.titulo }}</td>
+                <td>{{ a.autor }}</td>
+                <td>
+                    {% if a.estado == 'pendiente' %}<span class="badge bg-warning text-dark">Pendiente</span>{% endif %}
+                    {% if a.estado == 'publicado' %}<span class="badge bg-success">Publicado</span>{% endif %}
+                    {% if a.estado == 'retirado' %}<span class="badge bg-secondary">Retirado</span>{% endif %}
+                    {% if a.estado == 'rechazado' %}<span class="badge bg-danger">Rechazado</span>{% endif %}
+                </td>
+                <td>{{ a.vistas }}</td>
+                <td>{{ a.fecha }}</td>
+                <td>
+                    <a class="btn btn-sm btn-outline-primary" href="{{ url_for('articulos.ver_articulo', articulo_id=a.id) }}">Ver</a>
+                    {% if a.estado != 'publicado' %}
+                    <form method="POST" action="{{ url_for('admin.publicar', articulo_id=a.id) }}" class="d-inline">
+                        <button class="btn btn-sm btn-success">Publicar</button>
+                    </form>
+                    {% endif %}
+                    {% if a.estado == 'pendiente' %}
+                    <form method="POST" action="{{ url_for('admin.rechazar', articulo_id=a.id) }}" class="d-inline">
+                        <button class="btn btn-sm btn-outline-danger">Rechazar</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="alert alert-info">No hay artículos aún.</div>
+{% endif %}
+{% endblock %}
